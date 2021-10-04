@@ -569,7 +569,12 @@ export class RMTPlayer {
                 if(this.trackPos >= this.currentTracksSize) {
                     this.trackPos = 0
                     if(!this.repeat_track) {
-                        this.tracksListPos = (this.tracksListPos + 1) % this.song.trackLists.length
+                        this.tracksListPos += 1
+                        if(this.tracksListPos >= this.song.trackLists.length) {
+                            this.tracksListPos = 0
+                            this.currentFrame = 0
+                            this.startTime = currentTime
+                        }
                         this.loadTracks()
                     }
                 }
