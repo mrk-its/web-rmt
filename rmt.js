@@ -448,16 +448,21 @@ class Portamento {
 }
 
 export class RMTPlayer {
-    constructor(audioContext, pokeyNode) {
+    constructor(audioContext, pokeyNode, config) {
+        config = config || {}
         this.audioContext = audioContext
         this.pokeyNode = pokeyNode
-        this.currentFrame = 0
-        this.startTime = null
         this.state = "stopped"
         this.latency = 0.10
         this.pokeyRegs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        this.frameRate = 50
-        this.frameInterval = 1 / this.frameRate
+        this.setFrameRate(config.frameRate || 50.0)
+    }
+
+    setFrameRate(fps) {
+        this.frameRate = fps
+        this.frameInterval = 1 / this.frameRate / (this.song && this.song.instrumentFreq || 1)
+        this.currentFrame = 0
+        this.startTime = this.getCurrentTime()
     }
 
     load(buffer) {
@@ -492,7 +497,9 @@ export class RMTPlayer {
         let event = new Event("rmt_player");
         event.data = {
             currentFrame: this.currentFrame,
-            frame_cnt: this.currentFrame,
+            instrPos: this.instrPos,
+            trackPos: this.trackPos,
+            tracksListPos: this.tracksListPos,
             pokeyRegs: regs || null,
             state: this.state,
         }
@@ -552,6 +559,9 @@ export class RMTPlayer {
 
         let currentTime = this.getCurrentTime();
         while(this.startTime + this.currentFrame * this.frameInterval < currentTime + this.latency) {
+            this.step()
+            this.sendEvent(this.pokeyRegs);
+            this.currentFrame += 1
             this.instrPos += 1
             if(this.instrPos >= this.songSpeed * this.song.instrumentFreq) {
                 this.instrPos = 0
@@ -565,9 +575,6 @@ export class RMTPlayer {
                 }
                 this.loadTracksEntries()
             }
-            this.step()
-            this.currentFrame += 1
-            this.sendEvent(this.pokeyRegs);
             // if(this.currentFrame == 0) {
             //     this.startTime = currentTime;
             //     return;
