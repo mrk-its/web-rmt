@@ -207,7 +207,7 @@ class RMTInstrument {
         let trep = data[1]
         let eend = data[2]
         let erep = data[3]
-        this.tspd = data[4] & 0x3f
+        this.tspd = (data[4] & 0x3f) + 1
         this.tmode = (data[4] >> 6) & 1
         this.ttype = (data[4] >> 7) & 1
         this.audctl = data[5]
@@ -235,9 +235,8 @@ class RMTTune {
         this.regs_offset = channel < 4 ? 0 : 9
         this.epos = 0
         this.tpos = 0
+        this.tcnt = 0
         this.is_repeating = false
-
-        this.tspd = this.instrument.tspd
         this.vib_table = VIB_TABLE[instrument.vibrato]
         this.vib_index = 0
         this.shiftfrq = 0
@@ -294,21 +293,6 @@ class RMTTune {
                 this.eff_delay -= 1
             }
         }
-        if(this.tspd < 0) {
-            this.tspd = this.instrument.tspd
-            this.tpos += 1
-            if(this.tpos >= this.instrument.table.length) {
-                this.tpos = this.instrument.tgo
-            }
-            if(this.instrument.tmode) {
-                this.table_note = (this.table_note + this.instrument.table[this.tpos]) & 0xff
-            } else {
-                this.table_note = this.instrument.table[this.tpos]
-            }
-        } else {
-            this.tspd -= 1
-        }
-
         var frqaddcmd2 = 0
 
         switch(env_cmd) {
@@ -385,6 +369,19 @@ class RMTTune {
         let frq = player.portamento[this.channel].freq()
         if(env_portamento) {
             audf = (frq + this.shiftfrq) & 0xff
+        }
+
+        this.tcnt = (this.tcnt + 1) % this.instrument.tspd
+        if(this.tcnt == 0) {
+            this.tpos += 1
+            if(this.tpos >= this.instrument.table.length) {
+                this.tpos = this.instrument.tgo
+            }
+            if(this.instrument.tmode) {
+                this.table_note = (this.table_note + this.instrument.table[this.tpos]) & 0xff
+            } else {
+                this.table_note = this.instrument.table[this.tpos]
+            }
         }
 
         player.setPokeyAudf(this.channel, audf)
