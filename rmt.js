@@ -252,12 +252,12 @@ class RMTTune {
         let env_rvol = envelope[env_idx] >> 4
         var env_dist = ((envelope[env_idx + 1] >> 1) & 7) * 2
         let env_cmd = (envelope[env_idx + 1] >> 4) & 7
-        let env_filter = (envelope[env_idx + 1] >> 7) & 1
+        let env_is_filter = (envelope[env_idx + 1] >> 7) & 1
         let env_portamento = envelope[env_idx + 1] & 1
         let env_xy = envelope[env_idx + 2]
 
         this.env_dist = env_dist
-        this.env_filter = env_filter
+        this.env_is_filter = env_is_filter
 
         var freq_table = PURE_TABLE
         switch(env_dist) {
@@ -393,8 +393,11 @@ class RMTTune {
         let pokey_channel = this.channel % 4
         if(pokey_channel < 2) {
             let next_ch = this.channel + 2
-            if(this.env_filter && player.getPokeyAudc(this.channel) & 0xf) {
+            if(this.env_is_filter && (player.getPokeyAudc(this.channel) & 0xf)) {
                 player.setPokeyAudf(next_ch, (player.getPokeyAudf(this.channel) + this.filter) & 0xff)
+                if((player.getPokeyAudc(next_ch) & 0x10) == 0) {
+                    player.setPokeyAudc(next_ch, 0)
+                }
                 player.updatePokeyAudctl(this.pokey_idx, pokey_channel == 0 ? 4 : 2)
             }
         }
