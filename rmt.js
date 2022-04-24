@@ -689,7 +689,7 @@ export class RMTPlayer {
         let t = this.startTime + this.currentFrame * this.frameInterval
         let n_regs = this.song && this.song.n_channels == 4 ? 9 : 18
         let msg = regs.slice(0, n_regs).flatMap((v, i) => [i < 9 ? i : i - 9 + 16, v, t])
-        this.pokeyNode.port.postMessage(msg);
+        this.pokeyNode.port.postMessage([msg]);
         this.sendEvent(regs)
     }
     stop() {
